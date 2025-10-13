@@ -11,6 +11,7 @@ config_version=5
 [application]
 
 config/name="HIDUSBGD Sample"
+run/main_scene="uid://djwledsod1iyc"
 config/features=PackedStringArray("4.5", "GL Compatibility")
 config/icon="res://icon.svg"
 

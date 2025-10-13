@@ -22,6 +22,7 @@ get_target_property(GODOTCPP_SUFFIX godot-cpp GODOTCPP_SUFFIX)
 
 set(SAMPLE_TARGET_ADDON_DIR ${CMAKE_CURRENT_SOURCE_DIR}/sample/addons/hidusbgd)
 set(CODE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/code)
+set(DOC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/doc_classes)
 file(GLOB TRANSLATION_UNIT_FILES ${CODE_DIR}/*.cpp)
 file(GLOB HEADER_FILES ${CODE_DIR}/*.hpp)
 
@@ -30,6 +31,11 @@ set(TARGET_NAME ${PROJECT_NAME})
 add_library(
     ${TARGET_NAME}
     SHARED
+)
+
+target_sources(
+    ${TARGET_NAME}
+    PRIVATE
     ${TRANSLATION_UNIT_FILES}
     ${HEADER_FILES}
 )

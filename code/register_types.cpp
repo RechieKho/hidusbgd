@@ -1,9 +1,5 @@
-/* godot-cpp integration testing project.
- *
- * This is free and unencumbered software released into the public domain.
- */
-
 #include "register_types.hpp"
+#include "hidusb.hpp"
 
 #include <gdextension_interface.h>
 
@@ -19,6 +15,8 @@ void initialize_hidusbgd_module(ModuleInitializationLevel p_level)
     {
         return;
     }
+
+    GDREGISTER_CLASS(HIDUSB::HIDUSB);
 }
 
 void uninitialize_hidusbgd_module(ModuleInitializationLevel p_level)
