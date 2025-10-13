@@ -1,6 +1,8 @@
 #ifndef HIDUSB_HPP
 #define HIDUSB_HPP
 
+#include <hidapi.h>
+
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/classes/object.hpp>
 

@@ -12,13 +12,19 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+
 include(FetchContent)
 FetchContent_Declare(
     godotcpp
     GIT_REPOSITORY https://github.com/godotengine/godot-cpp.git
     GIT_TAG godot-4.5-stable
 )
-FetchContent_MakeAvailable(godotcpp)
+FetchContent_Declare(
+    hidapi
+    GIT_REPOSITORY https://github.com/libusb/hidapi.git
+    GIT_TAG hidapi-0.15.0
+)
+FetchContent_MakeAvailable(godotcpp hidapi)
 
 get_target_property(GODOTCPP_SUFFIX godot-cpp GODOTCPP_SUFFIX)
 
@@ -53,6 +59,7 @@ target_link_libraries(
     ${TARGET_NAME}
     PRIVATE
     godot-cpp
+    hidapi::hidapi
 )
 
 set_target_properties(
