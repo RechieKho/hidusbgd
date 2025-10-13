@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 
+find_package(Python3 3.4 REQUIRED)
+
 project(
     hidusbgd
     VERSION 0.0.1
@@ -39,6 +41,13 @@ target_sources(
     ${TRANSLATION_UNIT_FILES}
     ${HEADER_FILES}
 )
+
+file(GLOB_RECURSE DOC_FILES LIST_DIRECTORIES NO CONFIGURE_DEPENDS ${DOC_DIR}/*.xml)
+if(DOC_FILES)
+    if(GODOTCPP_TARGET MATCHES "editor|template_debug")
+        target_doc_sources(${TARGET_NAME} ${DOC_FILES})
+    endif()
+endif()
 
 target_link_libraries(
     ${TARGET_NAME}
