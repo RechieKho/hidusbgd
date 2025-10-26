@@ -4,9 +4,13 @@
 #include "godot_cpp/classes/object.hpp"
 #include "godot_cpp/core/class_db.hpp"
 
+#include "godot_cpp/core/error_macros.hpp"
 #include "godot_cpp/core/memory.hpp"
 #include "godot_cpp/variant/string_name.hpp"
+#include "hid_device.hpp"
 #include "hid_device_overview.hpp"
+#include "hidapi.h"
+#include <cstdint>
 
 namespace HIDUSBGD {
 
@@ -14,7 +18,7 @@ using namespace godot;
 
 namespace implementation {
 
-template <typename VoidType = void> class HIDUSB : public Object {
+template <typename TVoidType = void> class HIDUSB final : public Object {
   GDCLASS(HIDUSB, Object);
 
 private:
@@ -23,7 +27,7 @@ private:
   bool m_is_initialized;
 
 protected:
-  static void _bind_methods() {
+  static auto _bind_methods() -> void {
     ClassDB::bind_method(D_METHOD("is_initialized"), &HIDUSB::is_initialized);
     ClassDB::bind_method(D_METHOD("initialize"), &HIDUSB::initialize);
     ClassDB::bind_method(D_METHOD("get_device_overviews"),
@@ -65,11 +69,9 @@ public:
   }
 
   auto get_device_overviews() -> Array {
-    if (!m_is_initialized) {
-      UtilityFunctions::printerr(
-          "Unable to obtain device overviews, driver is not initialized.");
-      return Array();
-    }
+    ERR_FAIL_COND_V_MSG(
+        !is_initialized(), Array(),
+        "Unable to obtain device overviews, driver is not initialized.");
 
     auto result = Array();
 
@@ -93,10 +95,34 @@ public:
 
     return result;
   }
+
+  auto open(int64_t p_vendor_id, int64_t p_product_id) -> Ref<HIDDevice<>> {
+    ERR_FAIL_COND_V_MSG(
+        !is_initialized(), Ref<HIDDevice<>>(),
+        "Unable to obtain device overviews, driver is not initialized.");
+
+    const auto raw_device = hid_open(p_vendor_id, p_product_id, NULL);
+    auto device = Ref<HIDDevice<>>();
+    device.instantiate();
+    device->m_raw_device = raw_device;
+    return device;
+  }
+
+  auto open_from_path(const String &p_path) -> Ref<HIDDevice<>> {
+    ERR_FAIL_COND_V_MSG(
+        !is_initialized(), Ref<HIDDevice<>>(),
+        "Unable to obtain device overviews, driver is not initialized.");
+
+    const auto raw_device = hid_open_path(p_path.utf8().ptr());
+    auto device = Ref<HIDDevice<>>();
+    device.instantiate();
+    device->m_raw_device = raw_device;
+    return device;
+  }
 };
 
-template <typename VoidType>
-HIDUSB<VoidType> *HIDUSB<VoidType>::sm_singleton = nullptr;
+template <typename TVoidType>
+HIDUSB<TVoidType> *HIDUSB<TVoidType>::sm_singleton = nullptr;
 
 } // namespace implementation
 

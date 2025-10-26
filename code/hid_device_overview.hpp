@@ -18,7 +18,7 @@ using namespace godot;
 
 namespace implementation {
 
-template <typename VoidType = void>
+template <typename TVoidType = void>
 class HIDDeviceOverview final : public RefCounted {
   GDCLASS(HIDDeviceOverview, RefCounted);
 
@@ -34,7 +34,7 @@ private:
   int64_t m_interface_number;
 
 protected:
-  static void _bind_methods() {
+  static auto _bind_methods() -> void {
 
     ClassDB::bind_method(D_METHOD("set_path", "path"),
                          &HIDDeviceOverview::set_path);
@@ -93,7 +93,6 @@ protected:
   }
 
   auto _to_string() const -> String {
-
     return vformat("<DeviceOverview: [P=%d, V=%d, N=%d]>", m_product_string,
                    m_product_id, m_vendor_id, m_interface_number);
   }
