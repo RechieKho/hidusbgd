@@ -1,4 +1,5 @@
 extends Node
 
 func _ready() -> void:
-	HIDUSB.print_hello_world()
+	var result := HIDUSB.get_device_overviews()
+	print(result)

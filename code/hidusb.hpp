@@ -1,44 +1,107 @@
-#ifndef HIDUSB_HPP
-#define HIDUSB_HPP
+#ifndef HIDUSBGD_HIDUSB_HPP
+#define HIDUSBGD_HIDUSB_HPP
 
-#include <hidapi.h>
+#include "godot_cpp/classes/object.hpp"
+#include "godot_cpp/core/class_db.hpp"
 
-#include <godot_cpp/core/class_db.hpp>
-#include <godot_cpp/classes/object.hpp>
+#include "godot_cpp/core/memory.hpp"
+#include "godot_cpp/variant/string_name.hpp"
+#include "hid_device_overview.hpp"
 
-namespace HIDUSB
-{
+namespace HIDUSBGD {
 
-    using namespace godot;
+using namespace godot;
 
-    namespace implementation
-    {
+namespace implementation {
 
-        template <typename = void>
-        class HIDUSB : public Object
-        {
-            GDCLASS(HIDUSB, Object);
+template <typename VoidType = void> class HIDUSB : public Object {
+  GDCLASS(HIDUSB, Object);
 
-        private:
-            using Self = HIDUSB<>;
+private:
+  static HIDUSB *sm_singleton;
 
-        protected:
-            static auto _bind_methods() -> void
-            {
-                ClassDB::bind_static_method("HIDUSB", D_METHOD("print_hello_world"), &Self::print_hello_world);
-            }
+  bool m_is_initialized;
 
-        public:
-            static auto print_hello_world() -> void
-            {
-                UtilityFunctions::print("Hello world!");
-            }
-        };
+protected:
+  static void _bind_methods() {
+    ClassDB::bind_method(D_METHOD("is_initialized"), &HIDUSB::is_initialized);
+    ClassDB::bind_method(D_METHOD("initialize"), &HIDUSB::initialize);
+    ClassDB::bind_method(D_METHOD("get_device_overviews"),
+                         &HIDUSB::get_device_overviews);
+  }
 
-    } // namespace implementation
+public:
+  static auto get_singleton_name() -> StringName {
+    return StringName("HIDUSB");
+  }
 
-    using HIDUSB = implementation::HIDUSB<>;
+  static auto capture_singleton() -> HIDUSB * {
+    if (!sm_singleton)
+      sm_singleton = memnew(HIDUSB);
+    return sm_singleton;
+  }
 
-} // namespace HIDUSB
+  static auto release_singleton() -> void {
+    if (!sm_singleton)
+      return;
+    memdelete(sm_singleton);
+    sm_singleton = nullptr;
+  }
 
-#endif // HIDUSB_HPP
+  HIDUSB() { initialize(); }
+
+  ~HIDUSB() {
+    if (m_is_initialized)
+      hid_exit();
+  }
+
+  auto is_initialized() const -> bool { return m_is_initialized; }
+
+  auto initialize() -> bool {
+    if (m_is_initialized)
+      return true;
+    m_is_initialized = hid_init() == 0;
+    return m_is_initialized;
+  }
+
+  auto get_device_overviews() -> Array {
+    if (!m_is_initialized) {
+      UtilityFunctions::printerr(
+          "Unable to obtain device overviews, driver is not initialized.");
+      return Array();
+    }
+
+    auto result = Array();
+
+    auto enumeration = hid_enumerate(0, 0);
+    for (auto device_info = enumeration; device_info != nullptr;
+         device_info = device_info->next) {
+      auto device_overview = Ref<HIDDeviceOverview<>>();
+      device_overview.instantiate();
+      device_overview->set_path(device_info->path);
+      device_overview->set_vendor_id(device_info->vendor_id);
+      device_overview->set_product_id(device_info->product_id);
+      device_overview->set_serial_number(device_info->serial_number);
+      device_overview->set_release_number(device_info->release_number);
+      device_overview->set_manufacturer_string(
+          device_info->manufacturer_string);
+      device_overview->set_product_string(device_info->product_string);
+      device_overview->set_interface_number(device_info->interface_number);
+      result.append(device_overview);
+    }
+    hid_free_enumeration(enumeration);
+
+    return result;
+  }
+};
+
+template <typename VoidType>
+HIDUSB<VoidType> *HIDUSB<VoidType>::sm_singleton = nullptr;
+
+} // namespace implementation
+
+using HIDUSB = implementation::HIDUSB<>;
+
+} // namespace HIDUSBGD
+
+#endif // HIDUSBGD_HIDUSB_HPP

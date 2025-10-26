@@ -13,3 +13,8 @@ sample/addons/hidusbgd/libhidusbgd.macos.template_debug.framework/*
 
 sample/addons/hidusbgd/libhidusbgd.macos.template_release.framework/*
 !sample/addons/hidusbgd/libhidusbgd.macos.template_release.framework/Resources
+
+.cache
+
+.vscode/*
+!.vscode/extensions.json
