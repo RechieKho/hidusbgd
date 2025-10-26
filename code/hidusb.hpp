@@ -7,6 +7,7 @@
 #include "godot_cpp/core/error_macros.hpp"
 #include "godot_cpp/core/memory.hpp"
 #include "godot_cpp/variant/string_name.hpp"
+#include "godot_cpp/variant/typed_array.hpp"
 #include "hid_device.hpp"
 #include "hid_device_overview.hpp"
 #include "hidapi.h"
@@ -32,6 +33,10 @@ protected:
     ClassDB::bind_method(D_METHOD("initialize"), &HIDUSB::initialize);
     ClassDB::bind_method(D_METHOD("get_device_overviews"),
                          &HIDUSB::get_device_overviews);
+    ClassDB::bind_method(D_METHOD("open", "vendor_id", "product_id"),
+                         &HIDUSB::open);
+    ClassDB::bind_method(D_METHOD("open_from_path", "path"),
+                         &HIDUSB::open_from_path);
   }
 
 public:
@@ -68,12 +73,12 @@ public:
     return m_is_initialized;
   }
 
-  auto get_device_overviews() -> Array {
+  auto get_device_overviews() const -> TypedArray<Ref<HIDDeviceOverview<>>> {
     ERR_FAIL_COND_V_MSG(
-        !is_initialized(), Array(),
+        !is_initialized(), TypedArray<Ref<HIDDeviceOverview<>>>(),
         "Unable to obtain device overviews, driver is not initialized.");
 
-    auto result = Array();
+    auto result = TypedArray<Ref<HIDDeviceOverview<>>>();
 
     auto enumeration = hid_enumerate(0, 0);
     for (auto device_info = enumeration; device_info != nullptr;
@@ -96,7 +101,8 @@ public:
     return result;
   }
 
-  auto open(int64_t p_vendor_id, int64_t p_product_id) -> Ref<HIDDevice<>> {
+  auto open(int64_t p_vendor_id, int64_t p_product_id) const
+      -> Ref<HIDDevice<>> {
     ERR_FAIL_COND_V_MSG(
         !is_initialized(), Ref<HIDDevice<>>(),
         "Unable to obtain device overviews, driver is not initialized.");
@@ -108,7 +114,7 @@ public:
     return device;
   }
 
-  auto open_from_path(const String &p_path) -> Ref<HIDDevice<>> {
+  auto open_from_path(const String &p_path) const -> Ref<HIDDevice<>> {
     ERR_FAIL_COND_V_MSG(
         !is_initialized(), Ref<HIDDevice<>>(),
         "Unable to obtain device overviews, driver is not initialized.");

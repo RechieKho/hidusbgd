@@ -1,5 +1,6 @@
 #include "register_types.hpp"
 #include "godot_cpp/classes/engine.hpp"
+#include "hid_device.hpp"
 #include "hid_device_overview.hpp"
 #include "hidusb.hpp"
 
@@ -17,6 +18,7 @@ void initialize_hidusbgd_module(ModuleInitializationLevel p_level) {
   }
 
   GDREGISTER_CLASS(HIDUSBGD::HIDDeviceOverview);
+  GDREGISTER_CLASS(HIDUSBGD::HIDDevice);
 
   ClassDB::register_class<HIDUSBGD::HIDUSB>();
   Engine::get_singleton()->register_singleton(

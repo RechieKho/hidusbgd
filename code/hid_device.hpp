@@ -3,6 +3,7 @@
 
 #include "godot_cpp/classes/ref_counted.hpp"
 #include "godot_cpp/classes/wrapped.hpp"
+#include "godot_cpp/core/class_db.hpp"
 #include "godot_cpp/core/error_macros.hpp"
 #include "godot_cpp/variant/packed_byte_array.hpp"
 #include "godot_cpp/variant/variant.hpp"
@@ -26,6 +27,29 @@ private:
   hid_device *m_raw_device;
 
 protected:
+  static auto _bind_methods() -> void {
+    ClassDB::bind_method(D_METHOD("is_captured"), &HIDDevice::is_captured);
+    ClassDB::bind_method(D_METHOD("write", "data"), &HIDDevice::write);
+    ClassDB::bind_method(D_METHOD("read", "byte_count"), &HIDDevice::read);
+    ClassDB::bind_method(
+        D_METHOD("read_timeout", "byte_count", "timeout_milliseconds"),
+        &HIDDevice::read_timeout);
+    ClassDB::bind_method(D_METHOD("blocking", "is_blocking"),
+                         &HIDDevice::blocking);
+    ClassDB::bind_method(D_METHOD("send_feature_report", "data"),
+                         &HIDDevice::send_feature_report);
+    ClassDB::bind_method(D_METHOD("get_feature_report", "byte_count"),
+                         &HIDDevice::get_feature_report);
+    ClassDB::bind_method(D_METHOD("send_output_report", "data"),
+                         &HIDDevice::send_output_report);
+    ClassDB::bind_method(D_METHOD("get_input_report", "byte_count"),
+                         &HIDDevice::get_input_report);
+    ClassDB::bind_method(D_METHOD("get_device_overview"),
+                         &HIDDevice::get_device_overview);
+    ClassDB::bind_method(D_METHOD("get_report_descriptor", "descriptor_size"),
+                         &HIDDevice::get_report_descriptor);
+  }
+
 public:
   HIDDevice() {}
   ~HIDDevice() { release(); }
@@ -58,8 +82,8 @@ public:
                         "Unable to read from uncaptured (null) device.");
 
     auto result = PackedByteArray();
-    result.resize(p_byte_count + 1); // First byte would be the report number if
-                                     // the device uses numbered reports.
+    result.resize(p_byte_count); // First byte would be the report number if
+                                 // the device uses numbered reports.
     auto read_status = hid_read(m_raw_device, result.ptrw(), p_byte_count);
 
     ERR_FAIL_COND_V_MSG(read_status < 0, PackedByteArray(),
@@ -74,10 +98,10 @@ public:
                         "Unable to read from uncaptured (null) device.");
 
     auto result = PackedByteArray();
-    result.resize(p_byte_count + 1); // First byte would be the report number if
-                                     // the device uses numbered reports.
-    auto read_status = hid_read_timeout(
-        m_raw_device, result.ptrw(), p_byte_count + 1, p_timeout_milliseconds);
+    result.resize(p_byte_count); // First byte would be the report number if
+                                 // the device uses numbered reports.
+    auto read_status = hid_read_timeout(m_raw_device, result.ptrw(),
+                                        p_byte_count, p_timeout_milliseconds);
 
     ERR_FAIL_COND_V_MSG(read_status < 0, PackedByteArray(),
                         vformat(("Unable to read from device. [Error: %s]"),
@@ -117,10 +141,10 @@ public:
         "Unable to get feature report from uncaptured (null) device.");
 
     auto result = PackedByteArray();
-    result.resize(p_byte_count + 1); // First byte would be the report number if
-                                     // the device uses numbered reports.
+    result.resize(p_byte_count); // First byte would be the report number if
+                                 // the device uses numbered reports.
     const auto get_status =
-        hid_get_feature_report(m_raw_device, result.ptrw(), p_byte_count + 1);
+        hid_get_feature_report(m_raw_device, result.ptrw(), p_byte_count);
 
     ERR_FAIL_COND_V_MSG(
         get_status < 0, PackedByteArray(),
@@ -151,10 +175,10 @@ public:
         "Unable to get input report from uncaptured (null) device.");
 
     auto result = PackedByteArray();
-    result.resize(p_byte_count + 1); // First byte would be the report number if
-                                     // the device uses numbered reports.
+    result.resize(p_byte_count); // First byte would be the report number if
+                                 // the device uses numbered reports.
     const auto get_status =
-        hid_get_input_report(m_raw_device, result.ptrw(), p_byte_count + 1);
+        hid_get_input_report(m_raw_device, result.ptrw(), p_byte_count);
 
     ERR_FAIL_COND_V_MSG(
         get_status < 0, PackedByteArray(),

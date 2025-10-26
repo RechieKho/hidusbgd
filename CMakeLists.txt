@@ -48,13 +48,6 @@ target_sources(
     ${HEADER_FILES}
 )
 
-file(GLOB_RECURSE DOC_FILES LIST_DIRECTORIES NO CONFIGURE_DEPENDS ${DOC_DIR}/*.xml)
-if(DOC_FILES)
-    if(GODOTCPP_TARGET MATCHES "editor|template_debug")
-        target_doc_sources(${TARGET_NAME} ${DOC_FILES})
-    endif()
-endif()
-
 target_link_libraries(
     ${TARGET_NAME}
     PRIVATE
