@@ -93,8 +93,8 @@ protected:
   }
 
   auto _to_string() const -> String {
-    return vformat("<DeviceOverview: [P=%d, V=%d, N=%d]>", m_product_string,
-                   m_product_id, m_vendor_id, m_interface_number);
+    return vformat("<DeviceOverview: [P=%d, V=%d, N=%d]>", m_product_id,
+                   m_vendor_id, m_interface_number);
   }
 
 public:
