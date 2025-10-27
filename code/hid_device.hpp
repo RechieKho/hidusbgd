@@ -29,25 +29,29 @@ private:
 protected:
   static auto _bind_methods() -> void {
     ClassDB::bind_method(D_METHOD("is_captured"), &HIDDevice::is_captured);
-    ClassDB::bind_method(D_METHOD("write", "data"), &HIDDevice::write);
-    ClassDB::bind_method(D_METHOD("read", "byte_count"), &HIDDevice::read);
-    ClassDB::bind_method(
-        D_METHOD("read_timeout", "byte_count", "timeout_milliseconds"),
-        &HIDDevice::read_timeout);
+    ClassDB::bind_method(D_METHOD("write", "report"), &HIDDevice::write);
+    ClassDB::bind_method(D_METHOD("read", "report_id", "byte_count"),
+                         &HIDDevice::read);
+    ClassDB::bind_method(D_METHOD("read_timeout", "report_id", "byte_count",
+                                  "timeout_milliseconds"),
+                         &HIDDevice::read_timeout);
     ClassDB::bind_method(D_METHOD("blocking", "is_blocking"),
                          &HIDDevice::blocking);
-    ClassDB::bind_method(D_METHOD("send_feature_report", "data"),
+    ClassDB::bind_method(D_METHOD("send_feature_report", "report"),
                          &HIDDevice::send_feature_report);
-    ClassDB::bind_method(D_METHOD("get_feature_report", "byte_count"),
-                         &HIDDevice::get_feature_report);
-    ClassDB::bind_method(D_METHOD("send_output_report", "data"),
+    ClassDB::bind_method(
+        D_METHOD("get_feature_report", "report_id", "byte_count"),
+        &HIDDevice::get_feature_report);
+    ClassDB::bind_method(D_METHOD("send_output_report", "report"),
                          &HIDDevice::send_output_report);
-    ClassDB::bind_method(D_METHOD("get_input_report", "byte_count"),
-                         &HIDDevice::get_input_report);
+    ClassDB::bind_method(
+        D_METHOD("get_input_report", "repord_id", "byte_count"),
+        &HIDDevice::get_input_report);
     ClassDB::bind_method(D_METHOD("get_device_overview"),
                          &HIDDevice::get_device_overview);
     ClassDB::bind_method(D_METHOD("get_report_descriptor", "descriptor_size"),
-                         &HIDDevice::get_report_descriptor);
+                         &HIDDevice::get_report_descriptor,
+                         DEFVAL(HID_API_MAX_REPORT_DESCRIPTOR_SIZE));
   }
 
 public:
@@ -63,12 +67,12 @@ public:
     m_raw_device = nullptr;
   }
 
-  auto write(const PackedByteArray &p_data) -> int {
+  auto write(const PackedByteArray &p_report) -> int {
     ERR_FAIL_COND_V_MSG(!is_captured(), 0,
                         "Unable to write to uncaptured (null) device.");
 
     const auto write_status =
-        hid_write(m_raw_device, p_data.ptr(), p_data.size());
+        hid_write(m_raw_device, p_report.ptr(), p_report.size());
 
     ERR_FAIL_COND_V_MSG(write_status < 0, 0,
                         vformat(("Unable to write to device. [Error: %s]"),
@@ -77,14 +81,16 @@ public:
     return write_status;
   }
 
-  auto read(int64_t p_byte_count) const -> PackedByteArray {
+  auto read(int64_t p_report_id, int64_t p_byte_count) const
+      -> PackedByteArray {
     ERR_FAIL_COND_V_MSG(!is_captured(), PackedByteArray(),
                         "Unable to read from uncaptured (null) device.");
 
     auto result = PackedByteArray();
-    result.resize(p_byte_count); // First byte would be the report number if
-                                 // the device uses numbered reports.
-    auto read_status = hid_read(m_raw_device, result.ptrw(), p_byte_count);
+    result.resize(p_byte_count + 1);
+    result[0] = p_report_id;
+    const auto read_status =
+        hid_read(m_raw_device, result.ptrw(), p_byte_count + 1);
 
     ERR_FAIL_COND_V_MSG(read_status < 0, PackedByteArray(),
                         vformat(("Unable to read from device. [Error: %s]"),
@@ -92,16 +98,16 @@ public:
     return result;
   }
 
-  auto read_timeout(int64_t p_byte_count, int p_timeout_milliseconds) const
-      -> PackedByteArray {
+  auto read_timeout(int64_t p_report_id, int64_t p_byte_count,
+                    int p_timeout_milliseconds) const -> PackedByteArray {
     ERR_FAIL_COND_V_MSG(!is_captured(), PackedByteArray(),
                         "Unable to read from uncaptured (null) device.");
 
     auto result = PackedByteArray();
-    result.resize(p_byte_count); // First byte would be the report number if
-                                 // the device uses numbered reports.
-    auto read_status = hid_read_timeout(m_raw_device, result.ptrw(),
-                                        p_byte_count, p_timeout_milliseconds);
+    result.resize(p_byte_count + 1);
+    result[0] = p_report_id;
+    const auto read_status = hid_read_timeout(
+        m_raw_device, result.ptrw(), p_byte_count + 1, p_timeout_milliseconds);
 
     ERR_FAIL_COND_V_MSG(read_status < 0, PackedByteArray(),
                         vformat(("Unable to read from device. [Error: %s]"),
@@ -119,13 +125,13 @@ public:
                               String(hid_error(m_raw_device))));
   }
 
-  auto send_feature_report(const PackedByteArray &p_data) -> int {
+  auto send_feature_report(const PackedByteArray &p_report) -> int {
     ERR_FAIL_COND_V_MSG(
         !is_captured(), 0,
         "Unable to send feature report to uncaptured (null) device.");
 
     const auto send_status =
-        hid_send_feature_report(m_raw_device, p_data.ptr(), p_data.size());
+        hid_send_feature_report(m_raw_device, p_report.ptr(), p_report.size());
 
     ERR_FAIL_COND_V_MSG(
         send_status < 0, 0,
@@ -135,16 +141,17 @@ public:
     return send_status;
   }
 
-  auto get_feature_report(int64_t p_byte_count) const -> PackedByteArray {
+  auto get_feature_report(int64_t p_report_id, int64_t p_byte_count) const
+      -> PackedByteArray {
     ERR_FAIL_COND_V_MSG(
         !is_captured(), PackedByteArray(),
         "Unable to get feature report from uncaptured (null) device.");
 
     auto result = PackedByteArray();
-    result.resize(p_byte_count); // First byte would be the report number if
-                                 // the device uses numbered reports.
+    result.resize(p_byte_count + 1);
+    result[0] = p_report_id;
     const auto get_status =
-        hid_get_feature_report(m_raw_device, result.ptrw(), p_byte_count);
+        hid_get_feature_report(m_raw_device, result.ptrw(), p_byte_count + 1);
 
     ERR_FAIL_COND_V_MSG(
         get_status < 0, PackedByteArray(),
@@ -153,13 +160,13 @@ public:
     return result;
   }
 
-  auto send_output_report(const PackedByteArray &p_data) -> int {
+  auto send_output_report(const PackedByteArray &p_report) -> int {
     ERR_FAIL_COND_V_MSG(
         !is_captured(), 0,
         "Unable to send output report to uncaptured (null) device.");
 
     const auto send_status =
-        hid_send_output_report(m_raw_device, p_data.ptr(), p_data.size());
+        hid_send_output_report(m_raw_device, p_report.ptr(), p_report.size());
 
     ERR_FAIL_COND_V_MSG(
         send_status < 0, 0,
@@ -169,16 +176,17 @@ public:
     return send_status;
   }
 
-  auto get_input_report(int64_t p_byte_count) const -> PackedByteArray {
+  auto get_input_report(int64_t p_report_id, int64_t p_byte_count) const
+      -> PackedByteArray {
     ERR_FAIL_COND_V_MSG(
         !is_captured(), PackedByteArray(),
         "Unable to get input report from uncaptured (null) device.");
 
     auto result = PackedByteArray();
-    result.resize(p_byte_count); // First byte would be the report number if
-                                 // the device uses numbered reports.
+    result.resize(p_byte_count + 1);
+    result[0] = p_report_id;
     const auto get_status =
-        hid_get_input_report(m_raw_device, result.ptrw(), p_byte_count);
+        hid_get_input_report(m_raw_device, result.ptrw(), p_byte_count + 1);
 
     ERR_FAIL_COND_V_MSG(
         get_status < 0, PackedByteArray(),
@@ -219,8 +227,7 @@ public:
         "Unable to get report descriptor from uncaptured (null) device.");
 
     auto result = PackedByteArray();
-    result.resize(p_descriptor_size); // First byte would be the report number
-                                      // if the device uses numbered reports.
+    result.resize(p_descriptor_size);
     const auto get_status = hid_get_report_descriptor(
         m_raw_device, result.ptrw(), p_descriptor_size);
 

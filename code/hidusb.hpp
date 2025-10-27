@@ -108,6 +108,11 @@ public:
         "Unable to obtain device overviews, driver is not initialized.");
 
     const auto raw_device = hid_open(p_vendor_id, p_product_id, NULL);
+
+    ERR_FAIL_COND_V_MSG(
+        raw_device == NULL, Ref<HIDDevice<>>(),
+        vformat("Unable to open device. [Error: %s]", String(hid_error(NULL))));
+
     auto device = Ref<HIDDevice<>>();
     device.instantiate();
     device->m_raw_device = raw_device;
@@ -120,6 +125,11 @@ public:
         "Unable to obtain device overviews, driver is not initialized.");
 
     const auto raw_device = hid_open_path(p_path.utf8().ptr());
+
+    ERR_FAIL_COND_V_MSG(
+        raw_device == NULL, Ref<HIDDevice<>>(),
+        vformat("Unable to open device. [Error: %s]", String(hid_error(NULL))));
+
     auto device = Ref<HIDDevice<>>();
     device.instantiate();
     device->m_raw_device = raw_device;

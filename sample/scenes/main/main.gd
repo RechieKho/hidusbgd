@@ -1,7 +1,11 @@
 extends Node
 
 func _ready() -> void:
-	print(HIDUSB.get_device_overviews())
-	#var device := HIDUSB.open(0xfba5, 0x0001)
-	#device.write(PackedByteArray([0, 1, 2, 3, 4]))
-	#print(device.read_timeout(64, 1000).get_string_from_ascii())
+	for overview in HIDUSB.get_device_overviews():
+		printt(overview.product_string, overview.vendor_id, overview.product_id)
+	#var device := HIDUSB.open(0xfba5, 0x1000)
+	#var result = (device.get_input_report(0, 9))
+	#var data := result.slice(1)
+	#print(data)
+	#print(data.to_int64_array())
+	
